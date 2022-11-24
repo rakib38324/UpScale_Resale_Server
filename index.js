@@ -48,7 +48,6 @@ async function run() {
 
         app.get('/jwt', async(req,res)=>{
             const email=req.query.email;
-           
             const query = {email: email}
             const user = await usersCollections.findOne(query);
             if(user){
@@ -56,6 +55,16 @@ async function run() {
                 return res.send({accessToken: token});
             }
             res.status(403).send({accessToken: ''})
+        })
+
+        app.get('/finduser', async(req,res)=>{
+            const email=req.query.email;
+            const query = {email: email}
+            const user = await usersCollections.findOne(query);
+            if(user){
+                return res.send({accessToken: true});
+            }
+            return res.send({accessToken: false});
         })
 
 
@@ -77,7 +86,7 @@ async function run() {
             res.send(result);
         });
 
-        app.put('/users/admin/:id',async(req,res)=>{           
+        app.put('/users/admin/:id',verifyJWT,async(req,res)=>{           
             const id = req.params.id;
             const filter = {_id: ObjectId(id)}
             const options = {upsert: true}
@@ -102,7 +111,7 @@ async function run() {
             res.send(result);
         })
 
-        app.delete('/users/:id', async(req,res)=>{
+        app.delete('/users/:id',verifyJWT, async(req,res)=>{
             const id= req.params.id;
             const filter = {_id: ObjectId(id)};
             const result = await usersCollections.deleteOne(filter);
