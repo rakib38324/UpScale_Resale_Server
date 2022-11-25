@@ -139,12 +139,23 @@ async function run() {
             const result = await usersCollections.insertOne(user);
             res.send(result);
         });
+
+
+
         
         app.post('/product', async (req, res) => {
             const product = req.body;
             const result = await productsCollections.insertOne(product);
             res.send(result);
         });
+
+        app.get('/myproducts/:email',verifyJWT, async (req, res) => {
+            const SellerEmail = req.decoded.email;
+            // console.log(SellerEmail)
+            const query = { SellerEmail  }
+            const result = await productsCollections.find(query).toArray();
+            res.send(result);
+        })
 
         app.put('/users/admin/:id', verifyJWT, async (req, res) => {
             const decodedEmail = req.decoded.email;
@@ -203,6 +214,30 @@ async function run() {
             const result = await usersCollections.deleteOne(filter);
             res.send(result);
         })
+
+
+        app.put('/product/status/:id', verifyJWT, async (req, res) => {
+            const decodedEmail = req.decoded.email;
+            const query = { email: decodedEmail };
+            const user = await usersCollections.findOne(query);
+
+            if (user?.profileType !== 'Seller') {
+                return res.status(403).send({ message: 'Forbidden Access' })
+            }
+
+
+            const id = req.params.id;
+            const filter = { _id: ObjectId(id) }
+            const options = { upsert: true }
+            const updatedDoc = {
+                $set: {
+                    status: 'Available'
+                }
+            }
+            const result = await productsCollections.updateOne(filter, updatedDoc, options);
+            res.send(result);
+        })
+
 
     }
     finally {
