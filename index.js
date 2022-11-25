@@ -44,6 +44,7 @@ async function run() {
 
         const usersCollections = client.db('UpScale_ReSale').collection('Users');
         const brandCollections = client.db('UpScale_ReSale').collection('Brand_Name');
+        const productsCollections = client.db('UpScale_ReSale').collection('Products');
 
 
         app.get('/jwt', async (req, res) => {
@@ -123,9 +124,25 @@ async function run() {
             res.send(result);
         })
 
+        app.get('/brand/:email', async (req, res) => {
+            const email = req.params.email;
+            console.log(email)
+            const query = { email }
+            const brand = await usersCollections.findOne(query);
+            // console.log(user.role)
+            res.send(brand);
+
+        })
+
         app.post('/users', async (req, res) => {
             const user = req.body;
             const result = await usersCollections.insertOne(user);
+            res.send(result);
+        });
+        
+        app.post('/product', async (req, res) => {
+            const product = req.body;
+            const result = await productsCollections.insertOne(product);
             res.send(result);
         });
 
