@@ -238,6 +238,35 @@ async function run() {
             res.send(result);
         })
 
+        
+
+        app.delete('/product/status/:id',verifyJWT, async(req,res)=>{
+
+            const decodedEmail = req.decoded.email;
+            const query = { email: decodedEmail };
+            const user = await usersCollections.findOne(query);
+
+            if (user?.profileType !== 'Seller') {
+                return res.status(403).send({ message: 'Forbidden Access' })
+            }
+
+
+            const id= req.params.id;
+            const filter = {_id: ObjectId(id)};
+            const result = await productsCollections.deleteOne(filter);
+            res.send(result);
+        })
+
+
+        app.get('/products/:id', async (req, res) => {
+            const id= req.params.id;
+            console.log(id)
+            const filter = {brand_id: id};
+            const result = await productsCollections.find(filter).toArray();
+            console.log(result)
+            res.send(result);
+        })
+
 
     }
     finally {
