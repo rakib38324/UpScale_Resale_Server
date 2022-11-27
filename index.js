@@ -45,6 +45,7 @@ async function run() {
         const usersCollections = client.db('UpScale_ReSale').collection('Users');
         const brandCollections = client.db('UpScale_ReSale').collection('Brand_Name');
         const productsCollections = client.db('UpScale_ReSale').collection('Products');
+        const bookingCollections = client.db('UpScale_ReSale').collection('Booking_Products');
 
 
         app.get('/jwt', async (req, res) => {
@@ -268,6 +269,28 @@ async function run() {
         })
 
 
+        app.put('/product/booking/:id', verifyJWT, async (req, res) => {
+            
+
+
+            const id = req.params.id;
+            const filter = { _id: ObjectId(id) }
+            const options = { upsert: true }
+            const updatedDoc = {
+                $set: {
+                    Booking: 'Booked'
+                }
+            }
+            const result = await productsCollections.updateOne(filter, updatedDoc, options);
+            res.send(result);
+        })
+
+
+        app.post('/booking/product', async (req, res) => {
+            const product = req.body;
+            const result = await bookingCollections.insertOne(product);
+            res.send(result);
+        });
     }
     finally {
 
