@@ -49,6 +49,7 @@ async function run() {
         const productsCollections = client.db('UpScale_ReSale').collection('Products');
         const bookingCollections = client.db('UpScale_ReSale').collection('Booking_Products');
         const paymentCollections = client.db('UpScale_ReSale').collection('Payment');
+        const advertisementCollections = client.db('UpScale_ReSale').collection('Advertisement');
 
 
         app.get('/jwt', async (req, res) => {
@@ -122,6 +123,14 @@ async function run() {
             res.send(result);
         })
 
+        app.get('/reportItems', async (req, res) => {
+            const query = {
+                Report : 'reported'
+            }
+            const result = await productsCollections.find(query).toArray();
+            res.send(result);
+        })
+
         app.get('/brand', async (req, res) => {
             const query = {}
             const result = await brandCollections.find(query).toArray();
@@ -130,12 +139,23 @@ async function run() {
 
         app.get('/brand/:email', async (req, res) => {
             // const decodedEmail = req.decoded.email;
-            const email =req.query.email;
+            const email =req.params.email;
+            // console.log(email)
             const query = { email: email };
             
             const brand = await usersCollections.findOne(query);
-            // console.log(user.role)
+            // console.log(brand)
             res.send(brand);
+
+        })
+
+        app.get('/advertisemen/product/:id', async (req, res) => {
+        
+            const id = req.params.id;
+            const filter = { _id: ObjectId(id) }
+            const product = await productsCollections.findOne(filter);
+            // console.log(user.role)
+            res.send(product);
 
         })
 
@@ -151,6 +171,13 @@ async function run() {
         app.post('/product', async (req, res) => {
             const product = req.body;
             const result = await productsCollections.insertOne(product);
+            res.send(result);
+        });
+
+        
+        app.post('/adverticeProduct', async (req, res) => {
+            const product = req.body;
+            const result = await advertisementCollections.insertOne(product);
             res.send(result);
         });
 
@@ -240,6 +267,22 @@ async function run() {
             res.send(result);
         })
 
+
+
+        app.put('/product/report/:id',  async (req, res) => {
+            
+            const id = req.params.id;
+            const filter = { _id: ObjectId(id) }
+            const options = { upsert: true }
+            const updatedDoc = {
+                $set: {
+                    Report: 'reported'
+                }
+            }
+            const result = await productsCollections.updateOne(filter, updatedDoc, options);
+            res.send(result);
+        })
+
         app.delete('/users/:id', verifyJWT, async (req, res) => {
 
             const decodedEmail = req.decoded.email;
@@ -253,6 +296,22 @@ async function run() {
             const id = req.params.id;
             const filter = { _id: ObjectId(id) };
             const result = await usersCollections.deleteOne(filter);
+            res.send(result);
+        })
+
+        app.delete('/product/:id', verifyJWT, async (req, res) => {
+
+            const decodedEmail = req.decoded.email;
+            const query = { email: decodedEmail };
+            const user = await usersCollections.findOne(query);
+
+            if (user?.role !== 'admin') {
+                return res.status(403).send({ message: 'Forbidden Access' })
+            }
+
+            const id = req.params.id;
+            const filter = { _id: ObjectId(id) };
+            const result = await productsCollections.deleteOne(filter);
             res.send(result);
         })
 
@@ -272,12 +331,16 @@ async function run() {
             const options = { upsert: true }
             const updatedDoc = {
                 $set: {
-                    status: 'Available'
+                    status: 'Available',
+                    advertise: true,
+                    
                 }
             }
             const result = await productsCollections.updateOne(filter, updatedDoc, options);
             res.send(result);
         })
+
+        
 
         
 
@@ -368,6 +431,14 @@ async function run() {
             }
             const result = await productsCollections.updateOne(filter, updatedDoc, options);
             res.send(result);
+        })
+
+
+        app.get('/advertise', async (req, res) => {
+            const query = req.query.limit || 0;
+            const cursor = advertisementCollections.find({}).sort({ _id: -1 });
+            const services = await cursor.limit(parseInt(query)).toArray();
+            res.send(services)
         })
 
 
