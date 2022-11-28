@@ -129,8 +129,9 @@ async function run() {
         })
 
         app.get('/brand/:email', async (req, res) => {
-            const decodedEmail = req.decoded.email;
-            const query = { email: decodedEmail };
+            // const decodedEmail = req.decoded.email;
+            const email =req.query.email;
+            const query = { email: email };
             
             const brand = await usersCollections.findOne(query);
             // console.log(user.role)
@@ -308,21 +309,21 @@ async function run() {
         })
 
 
-        app.put('/product/booking/:id', verifyJWT, async (req, res) => {
+        // app.put('/product/booking/:id', verifyJWT, async (req, res) => {
             
 
 
-            const id = req.params.id;
-            const filter = { _id: ObjectId(id) }
-            const options = { upsert: true }
-            const updatedDoc = {
-                $set: {
-                    Booking: 'Booked'
-                }
-            }
-            const result = await productsCollections.updateOne(filter, updatedDoc, options);
-            res.send(result);
-        })
+        //     const id = req.params.id;
+        //     const filter = { _id: ObjectId(id) }
+        //     const options = { upsert: true }
+        //     const updatedDoc = {
+        //         $set: {
+        //             Booking: 'Booked'
+        //         }
+        //     }
+        //     const result = await productsCollections.updateOne(filter, updatedDoc, options);
+        //     res.send(result);
+        // })
 
 
         app.post('/booking/product', async (req, res) => {
