@@ -3,6 +3,8 @@ const cors = require('cors');
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const jwt = require('jsonwebtoken');
 require('dotenv').config();
+const stripe = require("stripe")(process.env.STRIPE_SECRET);
+
 
 const port = process.env.PORT || 5000;
 const app = express();
@@ -46,6 +48,7 @@ async function run() {
         const brandCollections = client.db('UpScale_ReSale').collection('Brand_Name');
         const productsCollections = client.db('UpScale_ReSale').collection('Products');
         const bookingCollections = client.db('UpScale_ReSale').collection('Booking_Products');
+        const paymentCollections = client.db('UpScale_ReSale').collection('Payment');
 
 
         app.get('/jwt', async (req, res) => {
@@ -63,7 +66,7 @@ async function run() {
             const email = req.params.email;
             const query = { email }
             const user = await usersCollections.findOne(query);
-            console.log(user?.role)
+            // console.log(user?.role)
             res.send({ isAdmin: user?.role === 'admin' });
 
         })
@@ -126,9 +129,9 @@ async function run() {
         })
 
         app.get('/brand/:email', async (req, res) => {
-            const email = req.params.email;
-            console.log(email)
-            const query = { email }
+            const decodedEmail = req.decoded.email;
+            const query = { email: decodedEmail };
+            
             const brand = await usersCollections.findOne(query);
             // console.log(user.role)
             res.send(brand);
@@ -178,6 +181,42 @@ async function run() {
             const result = await usersCollections.updateOne(filter, updatedDoc, options);
             res.send(result);
         })
+
+        app.post('/create-payment-intent', async(req,res)=>{
+            const booking =req.body;
+            const price = booking.ProductPrice;
+            const amount = price * 100;
+
+            const paymentIntent = await stripe.paymentIntents.create({
+                currency: 'usd',
+                amount: amount,
+                "payment_method_types": [
+                    "card"
+                ]
+            });
+            res.send({
+                clientSecret: paymentIntent.client_secret,
+            });
+        })
+
+        app.post('/payment', async (req,res)=>{
+            const payment = req.body;
+            const result = await paymentCollections.insertOne(payment);
+            const id = payment.bookingId
+            const filter = {_id: ObjectId(id)}
+            const updatedDoc = {
+                $set: {
+                    paid: true,
+                    transactionId: payment.transactionId,
+                    productMian_ID: payment.productMian_ID
+                }
+            }
+            const updateResult = await bookingCollections.updateOne(filter, updatedDoc)
+            res.send(result)
+        })
+
+
+
         app.put('/users/verify/:id', verifyJWT, async (req, res) => {
             const decodedEmail = req.decoded.email;
             const query = { email: decodedEmail };
@@ -261,10 +300,10 @@ async function run() {
 
         app.get('/products/:id', async (req, res) => {
             const id= req.params.id;
-            console.log(id)
+            // console.log(id)
             const filter = {brand_id: id};
             const result = await productsCollections.find(filter).toArray();
-            console.log(result)
+            // console.log(result)
             res.send(result);
         })
 
@@ -291,6 +330,46 @@ async function run() {
             const result = await bookingCollections.insertOne(product);
             res.send(result);
         });
+
+        app.get('/myorder/:email',verifyJWT, async (req, res) => {
+            const buyeremail = req.decoded.email;
+            // console.log(SellerEmail)
+            const query = { buyeremail }
+            const result = await bookingCollections.find(query).toArray();
+            res.send(result);
+        })
+
+
+
+       
+
+
+        app.get('/payment/:id', async (req, res) => {
+            const id = req.params.id;
+            const filter = { _id: ObjectId(id) };
+            const result = await bookingCollections.findOne(filter);
+            // console.log(result)
+            res.send(result);
+        })
+
+
+        
+
+        app.put('/payment/completed/:id', async (req, res) => {
+            
+            const id = req.params.id;
+            const filter = { _id: ObjectId(id) }
+            const options = { upsert: true }
+            const updatedDoc = {
+                $set: {
+                    status: 'Sold'
+                }
+            }
+            const result = await productsCollections.updateOne(filter, updatedDoc, options);
+            res.send(result);
+        })
+
+
     }
     finally {
 
