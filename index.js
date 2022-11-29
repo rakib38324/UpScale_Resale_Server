@@ -185,7 +185,7 @@ async function run() {
             const SellerEmail = req.decoded.email;
             // console.log(SellerEmail)
             const query = { SellerEmail  }
-            const result = await productsCollections.find(query).toArray();
+            const result = await productsCollections.find(query).sort({ _id: -1 }).toArray();
             res.send(result);
         })
 
@@ -366,7 +366,7 @@ async function run() {
             const id= req.params.id;
             // console.log(id)
             const filter = {brand_id: id};
-            const result = await productsCollections.find(filter).toArray();
+            const result = await productsCollections.find(filter).sort({ _id: -1 }).toArray();
             // console.log(result)
             res.send(result);
         })
@@ -399,7 +399,7 @@ async function run() {
             const buyeremail = req.decoded.email;
             // console.log(SellerEmail)
             const query = { buyeremail }
-            const result = await bookingCollections.find(query).toArray();
+            const result = await bookingCollections.find(query).sort({ _id: -1 }).toArray();
             res.send(result);
         })
 
